@@ -16,14 +16,13 @@ class Resume(Base):
     filename = Column(String)
     uploaded_at = Column(DateTime, default=datetime.datetime.utcnow)
     
-    # These fields will store the raw JSON strings
-    extracted_data = Column(String)  # Storing as String, will be serialized JSON
-    llm_analysis = Column(String)    # Storing as String, will be serialized JSON
+    extracted_data = Column(String)  
+    llm_analysis = Column(String)  
 
-# Create the database tables
+
 Base.metadata.create_all(bind=engine)
 
-# Dependency to get DB session
+
 def get_db():
     db = SessionLocal()
     try:
