@@ -11,11 +11,11 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.prompts import PromptTemplate
 from langchain.schema.output_parser import StrOutputParser
 
-# Load environment variables
+
 load_dotenv()
 app = FastAPI()
 
-# CORS configuration
+
 origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000"
@@ -28,7 +28,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize LLM
+
 llm = ChatGoogleGenerativeAI(
     model="gemini-2.5-flash",
     google_api_key=os.getenv("GEMINI_API_KEY"),
@@ -67,11 +67,11 @@ Structured resume data:
 
 analysis_prompt = PromptTemplate.from_template(analysis_template)
 
-# Chains
+
 extraction_chain = extraction_prompt | llm | StrOutputParser()
 analysis_chain = analysis_prompt | llm | StrOutputParser()
 
-# Helper function to parse LLM JSON output
+
 def parse_llm_json_output(text: str):
     try:
         cleaned_text = text.strip().replace("```json", "").replace("```", "").strip()
@@ -79,7 +79,7 @@ def parse_llm_json_output(text: str):
     except json.JSONDecodeError:
         raise HTTPException(status_code=500, detail="Failed to parse LLM JSON output.")
 
-# Upload and process resume
+
 @app.post("/api/upload")
 async def upload_resume(file: UploadFile = File(...), db: Session = Depends(get_db)):
     if file.content_type != "application/pdf":
@@ -88,15 +88,15 @@ async def upload_resume(file: UploadFile = File(...), db: Session = Depends(get_
         with pdfplumber.open(file.file) as pdf:
             resume_text = "".join(page.extract_text() or "" for page in pdf.pages)
         
-        # Extract structured data
+        
         extraction_result_str = extraction_chain.invoke({"resume_text": resume_text})
         extracted_data = parse_llm_json_output(extraction_result_str)
         
-        # Analyze resume
+      
         analysis_result_str = analysis_chain.invoke({"structured_data": json.dumps(extracted_data, indent=2)})
         llm_analysis = parse_llm_json_output(analysis_result_str)
         
-        # Save to database
+     
         new_resume = Resume(
             filename=file.filename,
             extracted_data=json.dumps(extracted_data),
@@ -116,7 +116,7 @@ async def upload_resume(file: UploadFile = File(...), db: Session = Depends(get_
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error during resume processing: {str(e)}")
 
-# Get all resume history
+
 @app.get("/api/resumes")
 def get_resumes_history(db: Session = Depends(get_db)):
     resumes = db.query(models.Resume).order_by(models.Resume.uploaded_at.desc()).all()
@@ -132,7 +132,7 @@ def get_resumes_history(db: Session = Depends(get_db)):
         })
     return history
 
-# Get specific resume details
+
 @app.get("/api/resumes/{resume_id}")
 def get_resume_details(resume_id: int, db: Session = Depends(get_db)):
     resume = db.query(models.Resume).filter(models.Resume.id == resume_id).first()
